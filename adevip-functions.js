@@ -68,7 +68,7 @@ async function cargarCursos() {
         try {
             // Llamar al Flow de Power Automate
             const response = await fetch(CONFIG.flowCursosUrl, {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
