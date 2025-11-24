@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADEVIP - Academia de Seguridad y Vigilancia</title>
+    
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- SharePoint REST API Helper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sp-pnp-js/3.0.8/pnp.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification.success {
+            background: #10b981;
+            color: white;
+        }
+
+        .notification.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .notification.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e293b 100%);
+            color: white;
+            padding: 24px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-box {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            color: #1e40af;
+        }
+
+        .logo-text h1 {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .contact-info {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%);
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero h2 {
+            font-size: 48px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #1e293b;
+            opacity: 0.8;
+            max-width: 700px;
+            margin: 0 auto 32px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .stat-number.primary { color: #1e40af; }
+        .stat-number.secondary { color: #dc2626; }
+        .stat-number.accent { color: #0891b2; }
+
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.7;
+            color: #1e293b;
+        }
+
+        /* Formulario */
+        .form-section {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 3px solid #1e40af;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .form-header h3 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 24px;
+            color: #1e293b;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(30, 64, 175, 0.2);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #1e40af;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .file-upload {
+            border: 2px dashed rgba(30, 64, 175, 0.4);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            background: rgba(30, 64, 175, 0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #1e40af;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload-icon {
+            font-size: 32px;
+            color: #1e40af;
+            margin-bottom: 12px;
+        }
+
+        .summary-box {
+            background: rgba(30, 64, 175, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #1e40af;
+            margin-bottom: 24px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 2px solid rgba(30, 64, 175, 0.3);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Cursos */
+        .courses-section {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: #1e293b;
+            opacity: 0.7;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 32px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .course-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .course-header {
+            background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%);
+            padding: 24px;
+            color: white;
+        }
+
+        .course-badge {
+            background: rgba(255,255,255,0.2);
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .course-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .course-description {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .course-body {
+            padding: 24px;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .course-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .course-footer {
+            border-top: 2px solid rgba(30, 64, 175, 0.1);
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-price {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .enroll-btn {
+            background: #dc2626;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .enroll-btn:hover {
+            background: #b91c1c;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 0;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(30, 64, 175, 0.2);
+            border-top: 4px solid #1e40af;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Benefits */
+        .benefits {
+            background: linear-gradient(135deg, #1e293b 0%, #1e40af 100%);
+            color: white;
+            padding: 80px 20px;
+        }
+
+        .benefits-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .benefits h2 {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 32px;
+        }
+
+        .benefit-item {
+            text-align: center;
+        }
+
+        .benefit-icon {
+            background: rgba(255,255,255,0.1);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .benefit-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .benefit-description {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        footer {
+            background: #1e293b;
+            color: white;
+            padding: 60px 20px 20px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .footer-section h4 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .footer-section p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .footer-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+            text-align: center;
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h2 {
+                font-size: 32px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notificación -->
+    <div id="notification" class="notification">
+        <span id="notificationIcon">✓</span>
+        <span id="notificationMessage"></span>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-box">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>ADEVIP</h1>
+                    <p>Academia de Seguridad y Vigilancia</p>
+                </div>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span>📞</span>
+                    <span>313 721 8112</span>
+                </div>
+                <div class="contact-item">
+                    <span>📧</span>
+                    <span>Deivy.palacio23@gmail.com</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Formando Profesionales en Seguridad</h2>
+            <p>Líderes en prevención desde 1993. Más de 31 años capacitando los mejores guardas de seguridad en Colombia</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number primary">1200+</div>
+                    <div class="stat-label">Alumnos Capacitados</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number secondary">112+</div>
+                    <div class="stat-label">Clases Completadas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number accent">30+</div>
+                    <div class="stat-label">Años de Experiencia</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Inscripción -->
+    <section id="formSection" class="form-section">
+        <div class="form-container">
+            <div class="form-header">
+                <h3 id="formTitle">Inscripción</h3>
+                <button class="close-btn" onclick="cerrarFormulario()">✕</button>
+            </div>
+
+            <form id="inscripcionForm" onsubmit="enviarInscripcion(event)">
+                <div class="form-group">
+                    <label>Nombre Completo *</label>
+                    <input type="text" name="nombre" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Documento de Identidad *</label>
+                        <input type="text" name="documento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono *</label>
+                        <input type="tel" name="telefono" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Correo Electrónico *</label>
+                    <input type="email" name="correo" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Fotocopia de Cédula *</label>
+                    <div class="file-upload" onclick="document.getElementById('cedulaFile').click()">
+                        <input type="file" id="cedulaFile" name="cedula" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <div class="file-upload-icon">📄</div>
+                        <div id="cedulaFileName">Click para adjuntar archivo</div>
+                        <div style="font-size: 12px; opacity: 0.6; margin-top: 4px;">PDF, JPG o PNG (Máx. 5MB)</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Último Curso Realizado (Opcional)</label>
+                    <div class="file-upload" onclick="document.getElementById('cursoAnteriorFile').click()">
+                        <input type="file" id="cursoAnteriorFile" name="cursoAnterior" accept=".pdf,.jpg,.jpeg,.png">
+                        <div class="file-upload-icon">📋</div>
+                        <div id="cursoAnteriorFileName">Click para adjuntar certificado</div>
+                        <div style="font-size: 12px; opacity: 0.6; margin-top: 4px;">PDF, JPG o PNG (Máx. 5MB)</div>
+                    </div>
+                </div>
+
+                <div class="summary-box" id="summaryBox">
+                    <!-- Se llena dinámicamente -->
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Completar Inscripción
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Cursos -->
+    <section class="courses-section">
+        <div class="section-header">
+            <h2>Nuestros Cursos</h2>
+            <p>Capacitación certificada y avalada por la Superintendencia de Vigilancia</p>
+        </div>
+        
+        <div id="coursesContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando cursos...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="benefits">
+        <div class="benefits-content">
+            <h2>¿Por Qué Elegir ADEVIP?</h2>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">🏆</div>
+                    <div class="benefit-title">Certificación Oficial</div>
+                    <div class="benefit-description">Avalados por la Superintendencia de Vigilancia y Seguridad Privada</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">👥</div>
+                    <div class="benefit-title">Bolsa de Empleo</div>
+                    <div class="benefit-description">Conexión directa con empresas de seguridad que buscan personal capacitado</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">📚</div>
+                    <div class="benefit-title">Formación Práctica</div>
+                    <div class="benefit-description">70% práctica, 30% teoría - Aprendizaje efectivo y aplicable</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">🛡️</div>
+                    <div class="benefit-title">31 Años de Experiencia</div>
+                    <div class="benefit-description">Desde 1993 formando los mejores profesionales en seguridad de Colombia</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>🛡️ ADEVIP</h3>
+                    <p>Academia líder en capacitación de vigilancia y seguridad privada en Colombia. Formando profesionales desde 1993.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <div class="footer-contact">
+                        <div class="footer-contact-item">
+                            <span>📍</span>
+                            <span>Av. 4 Norte #5N-20, Barrio Centenario, Cali</span>
+                        </div>
+                        <div class="footer-contact-item">
+                            <span>📞</span>
+                            <span>313 721 8112</span>
+                        </div>
+                        <div class="footer-contact-item">
+                            <span>📧</span>
+                            <span>Deivy.palacio23@gmail.com</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Horarios</h4>
+                    <p>
+                        Lunes a Viernes: 8:00 AM - 6:00 PM<br>
+                        Sábados: 8:00 AM - 2:00 PM<br>
+                        Domingos: Cerrado
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 ADEVIP LTDA. Todos los derechos reservados. | Vigilados por la Superintendencia de Vigilancia y Seguridad Privada</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="adevip-functions.js"></script>
+</body>
+</html>
