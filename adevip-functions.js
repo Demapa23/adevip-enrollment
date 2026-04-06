@@ -28,6 +28,7 @@ const CONFIG = {
 // Variables globales
 let cursosData = [];
 let cursoSeleccionado = null;
+let categoriaSeleccionada = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -35,9 +36,60 @@ let cursoSeleccionado = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 ADEVIP - Sistema de Inscripciones iniciado');
-    cargarCursos();
+    // Mostramos las categorías al inicio
     configurarEventosArchivos();
 });
+
+// ============================================
+// FUNCIONES DE NAVEGACIÓN
+// ============================================
+
+/**
+ * Seleccionar categoría y cargar cursos
+ */
+function seleccionarCategoria(categoria) {
+    categoriaSeleccionada = categoria;
+    console.log('📁 Categoría seleccionada:', categoria);
+    
+    // Ocultar categorías
+    document.getElementById('categoriesSection').style.display = 'none';
+    
+    // Mostrar sección de cursos
+    document.getElementById('coursesSection').classList.add('active');
+    
+    // Actualizar títulos según categoría
+    const titulos = {
+        fundamentacion: 'Cursos de Fundamentación',
+        reentrenamiento: 'Cursos de Reentrenamiento',
+        especializacion: 'Cursos de Especialización'
+    };
+    
+    const subtitulos = {
+        fundamentacion: 'Inicia tu formación profesional en seguridad',
+        reentrenamiento: 'Actualiza y renueva tus conocimientos',
+        especializacion: 'Destaca con formación avanzada'
+    };
+    
+    document.getElementById('coursesTitle').textContent = titulos[categoria];
+    document.getElementById('coursesSubtitle').textContent = subtitulos[categoria];
+    
+    // Cargar cursos desde SharePoint
+    cargarCursos(categoria);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * Volver a la selección de categorías
+ */
+function volverACategorias() {
+    document.getElementById('coursesSection').classList.remove('active');
+    document.getElementById('categoriesSection').style.display = 'block';
+    categoriaSeleccionada = null;
+    cursosData = [];
+    console.log('← Volviendo a categorías');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 // ============================================
 // FUNCIONES DE SHAREPOINT
@@ -46,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Cargar cursos desde SharePoint vía Power Automate
  */
-async function cargarCursos() {
+async function cargarCursos(categoria = null) {
     try {
         const coursesContainer = document.getElementById('coursesContainer');
         
@@ -80,8 +132,21 @@ async function cargarCursos() {
                 
                 // Verificar si hay cursos
                 if (data.value && Array.isArray(data.value) && data.value.length > 0) {
-                    cursosData = data.value.map(item => validarDatosCurso(item));
-                    console.log('✅ Cursos cargados desde SharePoint:', cursosData.length);
+                    // Procesar todos los cursos
+                    let todosCursos = data.value.map(item => validarDatosCurso(item));
+                    
+                    // Filtrar por categoría si se especificó
+                    if (categoria) {
+                        cursosData = todosCursos.filter(curso => {
+                            const cursoCategoria = (curso.categoria || '').toLowerCase();
+                            return cursoCategoria.includes(categoria);
+                        });
+                        console.log(`✅ Cursos de ${categoria}:`, cursosData.length);
+                    } else {
+                        cursosData = todosCursos;
+                        console.log('✅ Todos los cursos cargados:', cursosData.length);
+                    }
+                    
                     console.log('📊 Primer curso:', cursosData[0]);
                 } else {
                     console.warn('⚠️ La respuesta no contiene cursos');
@@ -105,7 +170,8 @@ async function cargarCursos() {
                     duracion: '120 horas',
                     precio: '$450.000',
                     modalidad: 'Presencial',
-                    nivel: 'Básico'
+                    nivel: 'Básico',
+                    categoria: 'Fundamentación'
                 },
                 {
                     id: 2,
@@ -114,7 +180,8 @@ async function cargarCursos() {
                     duracion: '160 horas',
                     precio: '$850.000',
                     modalidad: 'Presencial',
-                    nivel: 'Avanzado'
+                    nivel: 'Avanzado',
+                    categoria: 'Fundamentación'
                 },
                 {
                     id: 3,
@@ -123,7 +190,8 @@ async function cargarCursos() {
                     duracion: '80 horas',
                     precio: '$650.000',
                     modalidad: 'Híbrido',
-                    nivel: 'Especialización'
+                    nivel: 'Especialización',
+                    categoria: 'Fundamentación'
                 },
                 {
                     id: 4,
@@ -132,7 +200,8 @@ async function cargarCursos() {
                     duracion: '100 horas',
                     precio: '$550.000',
                     modalidad: 'Presencial',
-                    nivel: 'Especialización'
+                    nivel: 'Especialización',
+                    categoria: 'Fundamentación'
                 },
                 {
                     id: 5,
@@ -141,7 +210,8 @@ async function cargarCursos() {
                     duracion: '30 horas',
                     precio: '$250.000',
                     modalidad: 'Virtual',
-                    nivel: 'Actualización'
+                    nivel: 'Actualización',
+                    categoria: 'Reentrenamiento'
                 },
                 {
                     id: 6,
@@ -150,9 +220,16 @@ async function cargarCursos() {
                     duracion: '140 horas',
                     precio: '$950.000',
                     modalidad: 'Presencial',
-                    nivel: 'Especialización'
+                    nivel: 'Especialización',
+                    categoria: 'Especialización'
                 }
             ];
+            
+            // Filtrar por categoría si se especificó
+            if (categoria) {
+                cursosData = cursosData.filter(c => c.categoria.toLowerCase().includes(categoria));
+            }
+            
             console.log('✅ Cursos de ejemplo cargados:', cursosData.length);
         }
 
@@ -214,7 +291,8 @@ function validarDatosCurso(item) {
         duracion: item['Duraci_x00f3_n'] ? `${item['Duraci_x00f3_n']} horas` : 'Por definir',
         precio: formatearPrecio(item.Precio),
         modalidad: item.Modalidad?.Value || item.Modalidad || 'Presencial',
-        nivel: item.Requisitos?.Value || item.Nivel || 'Básico'
+        nivel: item.Requisitos?.Value || item.Nivel || 'Básico',
+        categoria: item.Categoria || item.Requisitos?.Value || item.Nivel || ''
     };
 }
 
@@ -223,6 +301,15 @@ function validarDatosCurso(item) {
  */
 function renderizarCursos() {
     const container = document.getElementById('coursesContainer');
+    
+    if (cursosData.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;">
+                <p style="font-size: 18px; color: #64748b;">No hay cursos disponibles en esta categoría</p>
+            </div>
+        `;
+        return;
+    }
     
     const html = `
         <div class="courses-grid">
@@ -263,10 +350,49 @@ function renderizarCursos() {
 }
 
 /**
+ * Subir archivo a biblioteca de documentos de SharePoint
+ */
+async function subirArchivoSharePoint(file, inscripcionId, tipoDocumento, formDigest) {
+    try {
+        if (!file) return null;
+        
+        const fileBuffer = await file.arrayBuffer();
+        const fileName = `${inscripcionId}_${tipoDocumento}_${file.name}`;
+        const folderUrl = `${CONFIG.sharepoint.bibliotecaDocumentos}`;
+
+        const uploadResponse = await fetch(
+            `${CONFIG.sharepoint.siteUrl}/_api/web/GetFolderByServerRelativeUrl('${folderUrl}')/Files/add(url='${fileName}',overwrite=true)`,
+            {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json;odata=verbose',
+                    'X-RequestDigest': formDigest
+                },
+                body: fileBuffer
+            }
+        );
+
+        if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            const fileUrl = uploadData.d.ServerRelativeUrl;
+            const fullUrl = `${CONFIG.sharepoint.siteUrl}${fileUrl}`;
+            console.log(`✅ Archivo ${tipoDocumento} subido:`, fullUrl);
+            return fullUrl;
+        }
+        
+        return null;
+    } catch (error) {
+        console.warn(`⚠️ No se pudo subir archivo ${tipoDocumento}:`, error);
+        return null;
+    }
+}
+
+/**
  * Guardar inscripción en SharePoint
  */
 async function guardarEnSharePoint(formData, curso) {
     try {
+        // Obtener Form Digest Token
         const digestResponse = await fetch(
             `${CONFIG.sharepoint.siteUrl}/_api/contextinfo`,
             {
@@ -280,12 +406,18 @@ async function guardarEnSharePoint(formData, curso) {
         const digestData = await digestResponse.json();
         const formDigest = digestData.d.GetContextWebInformation.FormDigestValue;
 
+        // Primero crear el item de inscripción (sin archivos)
         const itemData = {
             '__metadata': { 'type': 'SP.Data.InscripcionesListItem' },
-            'NombreCompleto': formData.nombre,
+            'Nombres': formData.nombres,
+            'Apellidos': formData.apellidos,
             'Documento': formData.documento,
+            'LugarExpedicion': formData.lugarExpedicion,
+            'FechaNacimiento': formData.fechaNacimiento,
+            'FechaExpedicion': formData.fechaExpedicion,
             'Correo': formData.correo,
             'Telefono': formData.telefono,
+            'TipoEstudiante': formData.tipoEstudiante,
             'Curso': curso.nombre,
             'PrecioCurso': curso.precio,
             'FechaInscripcion': new Date().toISOString(),
@@ -306,53 +438,71 @@ async function guardarEnSharePoint(formData, curso) {
         );
 
         const data = await response.json();
-        console.log('✅ Inscripción guardada en SharePoint:', data.d.Id);
-        return data.d.Id;
+        const inscripcionId = data.d.Id;
+        console.log('✅ Inscripción guardada en SharePoint:', inscripcionId);
+
+        // Subir archivos y obtener URLs
+        console.log('📤 Subiendo archivos a SharePoint...');
+        const fotoUrl = await subirArchivoSharePoint(formData.fotoFile, inscripcionId, 'Foto', formDigest);
+        const cedulaUrl = await subirArchivoSharePoint(formData.cedulaFile, inscripcionId, 'Cedula', formDigest);
+        const cursoAnteriorUrl = await subirArchivoSharePoint(formData.cursoAnteriorFile, inscripcionId, 'CursoAnterior', formDigest);
+
+        // Actualizar el item con las URLs de los archivos
+        const updateData = {
+            '__metadata': { 'type': 'SP.Data.InscripcionesListItem' }
+        };
+
+        if (fotoUrl) {
+            updateData.Foto = {
+                '__metadata': { 'type': 'SP.FieldUrlValue' },
+                'Url': fotoUrl,
+                'Description': 'Foto 3x4'
+            };
+        }
+
+        if (cedulaUrl) {
+            updateData.FotocopiaCedula = {
+                '__metadata': { 'type': 'SP.FieldUrlValue' },
+                'Url': cedulaUrl,
+                'Description': 'Fotocopia Cédula'
+            };
+        }
+
+        if (cursoAnteriorUrl) {
+            updateData.UltimoCursoRealizado = {
+                '__metadata': { 'type': 'SP.FieldUrlValue' },
+                'Url': cursoAnteriorUrl,
+                'Description': 'Certificado Curso Anterior'
+            };
+        }
+
+        // Solo actualizar si hay archivos que agregar
+        if (fotoUrl || cedulaUrl || cursoAnteriorUrl) {
+            const updateResponse = await fetch(
+                `${CONFIG.sharepoint.siteUrl}/_api/web/lists/getbytitle('${CONFIG.sharepoint.listaInscripciones}')/items(${inscripcionId})`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json;odata=verbose',
+                        'Content-Type': 'application/json;odata=verbose',
+                        'X-RequestDigest': formDigest,
+                        'IF-MATCH': '*',
+                        'X-HTTP-Method': 'MERGE'
+                    },
+                    body: JSON.stringify(updateData)
+                }
+            );
+
+            if (updateResponse.ok) {
+                console.log('✅ URLs de archivos guardadas en SharePoint');
+            }
+        }
+
+        return inscripcionId;
     } catch (error) {
         console.warn('⚠️ No se pudo guardar en SharePoint:', error);
         // Retornar ID simulado en modo demo
         return Math.floor(Math.random() * 10000);
-    }
-}
-
-/**
- * Subir archivos a SharePoint
- */
-async function subirArchivo(file, inscripcionId, tipoDocumento) {
-    try {
-        const digestResponse = await fetch(
-            `${CONFIG.sharepoint.siteUrl}/_api/contextinfo`,
-            {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json;odata=verbose'
-                }
-            }
-        );
-        
-        const digestData = await digestResponse.json();
-        const formDigest = digestData.d.GetContextWebInformation.FormDigestValue;
-
-        const fileBuffer = await file.arrayBuffer();
-        const fileName = `${inscripcionId}_${tipoDocumento}_${file.name}`;
-
-        const uploadResponse = await fetch(
-            `${CONFIG.sharepoint.siteUrl}/_api/web/GetFolderByServerRelativeUrl('${CONFIG.sharepoint.bibliotecaDocumentos}')/Files/add(url='${fileName}',overwrite=true)`,
-            {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json;odata=verbose',
-                    'X-RequestDigest': formDigest
-                },
-                body: fileBuffer
-            }
-        );
-
-        console.log('✅ Archivo subido:', fileName);
-        return await uploadResponse.json();
-    } catch (error) {
-        console.warn('⚠️ No se pudo subir archivo:', error);
-        return { success: false };
     }
 }
 
@@ -420,7 +570,7 @@ async function generarPDFConfirmacion(datosInscripcion, curso) {
     doc.setFontSize(11);
     doc.text(`Nombre:`, 25, yPos);
     doc.setFont(undefined, 'bold');
-    doc.text(datosInscripcion.nombre, 55, yPos);
+    doc.text(`${datosInscripcion.nombres} ${datosInscripcion.apellidos}`, 55, yPos);
     
     yPos += 8;
     doc.setFont(undefined, 'normal');
@@ -455,9 +605,9 @@ async function generarPDFConfirmacion(datosInscripcion, curso) {
     doc.setFontSize(11);
     doc.text(`Curso:`, 25, yPos);
     doc.setFont(undefined, 'bold');
-    doc.text(curso.nombre, 55, yPos);
+    doc.text(curso.nombre, 55, yPos, { maxWidth: 130 });
     
-    yPos += 8;
+    yPos += 12;
     doc.setFont(undefined, 'normal');
     doc.text(`Duración:`, 25, yPos);
     doc.setFont(undefined, 'bold');
@@ -570,99 +720,24 @@ async function enviarCorreoConPDF(datosInscripcion, curso) {
         const emailData = {
             to: datosInscripcion.correo,
             subject: `✅ Confirmación de Inscripción - ${curso.nombre} - ADEVIP`,
-            nombreCompleto: datosInscripcion.nombre,
+            tipoEstudiante: datosInscripcion.tipoEstudiante,
+            nombres: datosInscripcion.nombres,
+            apellidos: datosInscripcion.apellidos,
             documento: datosInscripcion.documento,
+            lugarExpedicion: datosInscripcion.lugarExpedicion,
+            fechaNacimiento: datosInscripcion.fechaNacimiento,
+            fechaExpedicion: datosInscripcion.fechaExpedicion,
             telefono: datosInscripcion.telefono,
             curso: curso.nombre,
             precio: curso.precio,
             duracion: curso.duracion,
             modalidad: curso.modalidad,
+            fotoBase64: datosInscripcion.fotoBase64 || '',
+            fotoNombre: datosInscripcion.fotoNombre || '',
             cedulaBase64: datosInscripcion.cedulaBase64 || '',
             cedulaNombre: datosInscripcion.cedulaNombre || '',
             certificadoBase64: datosInscripcion.certificadoBase64 || '',
             certificadoNombre: datosInscripcion.certificadoNombre || '',
-            body: `
-                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-                    <!-- Header -->
-                    <div style="background: linear-gradient(135deg, #1e40af 0%, #1e293b 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                        <div style="background: white; width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                            <span style="font-size: 40px;">🛡️</span>
-                        </div>
-                        <h1 style="color: white; margin: 0; font-size: 28px;">¡Bienvenido a ADEVIP!</h1>
-                        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Tu inscripción ha sido confirmada</p>
-                    </div>
-                    
-                    <!-- Body -->
-                    <div style="padding: 40px 30px; background: #f8fafc;">
-                        <p style="font-size: 18px; color: #1e293b; margin: 0 0 20px 0;">Hola <strong>${datosInscripcion.nombre}</strong>,</p>
-                        
-                        <p style="font-size: 16px; color: #475569; line-height: 1.6;">
-                            ¡Felicitaciones! Tu inscripción al curso <strong style="color: #1e40af;">${curso.nombre}</strong> ha sido procesada exitosamente.
-                        </p>
-                        
-                        <!-- Course Details -->
-                        <div style="background: white; padding: 25px; border-radius: 12px; margin: 25px 0; border-left: 5px solid #1e40af; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                            <h3 style="margin-top: 0; color: #1e40af; font-size: 18px;">📋 Detalles de tu inscripción:</h3>
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Curso:</strong></td>
-                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${curso.nombre}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Duración:</strong></td>
-                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${curso.duracion}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Modalidad:</strong></td>
-                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${curso.modalidad}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Inversión:</strong></td>
-                                    <td style="padding: 8px 0; color: #dc2626; font-size: 18px; font-weight: bold;">${curso.precio}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p style="margin: 0; color: #1e40af; font-size: 14px;">
-                                📎 <strong>Importante:</strong> Adjunto encontrarás tu certificado de inscripción en formato PDF.
-                            </p>
-                        </div>
-                        
-                        <h4 style="color: #1e40af; margin-top: 30px;">🎯 Próximos pasos:</h4>
-                        <ol style="color: #475569; line-height: 1.8; font-size: 15px;">
-                            <li>Nuestro equipo administrativo revisará tu documentación</li>
-                            <li>Te contactaremos en las próximas <strong>24-48 horas</strong></li>
-                            <li>Recibirás información detallada sobre el inicio de clases y metodología</li>
-                            <li>Te enviaremos las instrucciones de pago</li>
-                        </ol>
-                        
-                        <!-- Contact Info -->
-                        <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 30px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                            <p style="color: #64748b; margin: 0 0 15px 0; font-size: 14px;">¿Tienes alguna pregunta? Contáctanos:</p>
-                            <p style="margin: 5px 0; color: #1e293b;">
-                                📞 <strong>313 721 8112</strong><br>
-                                📧 <strong>Deivy.palacio23@gmail.com</strong><br>
-                                📍 <strong>Av. 4 Norte #5N-20, Barrio Centenario, Cali</strong>
-                            </p>
-                        </div>
-                        
-                        <p style="margin-top: 30px; color: #475569; font-size: 15px; text-align: center;">
-                            ¡Gracias por confiar en <strong style="color: #1e40af;">ADEVIP</strong> para tu formación profesional!
-                        </p>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div style="background: #1e293b; padding: 30px 20px; text-align: center; color: white; border-radius: 0 0 10px 10px;">
-                        <p style="margin: 0; font-size: 16px; font-weight: bold;">ADEVIP - Academia de Vigilancia y Seguridad Privada</p>
-                        <p style="margin: 10px 0 5px 0; font-size: 13px; opacity: 0.9;">Formando profesionales en seguridad desde 1993</p>
-                        <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">Vigilados por la Superintendencia de Vigilancia y Seguridad Privada</p>
-                        <p style="margin: 15px 0 0 0; font-size: 12px; opacity: 0.7;">
-                            Este es un correo automático, por favor no responder a esta dirección.
-                        </p>
-                    </div>
-                </div>
-            `,
             attachment: {
                 filename: pdf.fileName,
                 content: pdf.pdfBase64,
@@ -737,6 +812,7 @@ function abrirFormulario(cursoId) {
 function cerrarFormulario() {
     document.getElementById('formSection').classList.remove('active');
     document.getElementById('inscripcionForm').reset();
+    document.getElementById('fotoFileName').textContent = 'Click para adjuntar foto';
     document.getElementById('cedulaFileName').textContent = 'Click para adjuntar archivo';
     document.getElementById('cursoAnteriorFileName').textContent = 'Click para adjuntar certificado';
     cursoSeleccionado = null;
@@ -775,19 +851,38 @@ function actualizarResumen() {
  * Configurar eventos de archivos
  */
 function configurarEventosArchivos() {
-    document.getElementById('cedulaFile').addEventListener('change', (e) => {
-        if (e.target.files[0]) {
-            document.getElementById('cedulaFileName').textContent = e.target.files[0].name;
-            console.log('📄 Cédula seleccionada:', e.target.files[0].name);
-        }
-    });
+    // Foto 3x4
+    const fotoInput = document.getElementById('fotoFile');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                document.getElementById('fotoFileName').textContent = e.target.files[0].name;
+                console.log('📸 Foto seleccionada:', e.target.files[0].name);
+            }
+        });
+    }
     
-    document.getElementById('cursoAnteriorFile').addEventListener('change', (e) => {
-        if (e.target.files[0]) {
-            document.getElementById('cursoAnteriorFileName').textContent = e.target.files[0].name;
-            console.log('📄 Certificado seleccionado:', e.target.files[0].name);
-        }
-    });
+    // Cédula
+    const cedulaInput = document.getElementById('cedulaFile');
+    if (cedulaInput) {
+        cedulaInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                document.getElementById('cedulaFileName').textContent = e.target.files[0].name;
+                console.log('📄 Cédula seleccionada:', e.target.files[0].name);
+            }
+        });
+    }
+    
+    // Curso anterior
+    const cursoAnteriorInput = document.getElementById('cursoAnteriorFile');
+    if (cursoAnteriorInput) {
+        cursoAnteriorInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                document.getElementById('cursoAnteriorFileName').textContent = e.target.files[0].name;
+                console.log('📄 Certificado seleccionado:', e.target.files[0].name);
+            }
+        });
+    }
 }
 
 /**
@@ -834,22 +929,26 @@ async function enviarInscripcion(event) {
     
     // Recopilar datos
     const formData = {
-        nombre: form.nombre.value.trim(),
+        tipoEstudiante: form.tipoEstudiante.value,
+        nombres: form.nombres.value.trim(),
+        apellidos: form.apellidos.value.trim(),
         documento: form.documento.value.trim(),
+        lugarExpedicion: form.lugarExpedicion.value.trim(),
+        fechaNacimiento: form.fechaNacimiento.value,
+        fechaExpedicion: form.fechaExpedicion.value,
         correo: form.correo.value.trim(),
         telefono: form.telefono.value.trim(),
+        fotoFile: form.foto.files[0] || null,
         cedulaFile: form.cedula.files[0],
         cursoAnteriorFile: form.cursoAnterior.files[0] || null
     };
     
     console.log('📋 Datos del formulario:', {
-        nombre: formData.nombre,
+        tipoEstudiante: formData.tipoEstudiante,
+        nombres: formData.nombres,
+        apellidos: formData.apellidos,
         documento: formData.documento,
-        correo: formData.correo,
-        telefono: formData.telefono,
-        curso: cursoSeleccionado.nombre,
-        cedulaFile: formData.cedulaFile ? formData.cedulaFile.name : 'No',
-        cursoAnteriorFile: formData.cursoAnteriorFile ? formData.cursoAnteriorFile.name : 'No'
+        curso: cursoSeleccionado.nombre
     });
     
     // Validar archivos
@@ -864,6 +963,11 @@ async function enviarInscripcion(event) {
         return;
     }
     
+    if (formData.fotoFile && formData.fotoFile.size > 5 * 1024 * 1024) {
+        mostrarNotificacion('La foto es muy grande. Máximo 5MB', 'error');
+        return;
+    }
+    
     if (formData.cursoAnteriorFile && formData.cursoAnteriorFile.size > 5 * 1024 * 1024) {
         mostrarNotificacion('El certificado es muy grande. Máximo 5MB', 'error');
         return;
@@ -874,34 +978,22 @@ async function enviarInscripcion(event) {
         submitBtn.textContent = 'Procesando inscripción...';
         
         // PASO 1: Guardar en SharePoint
-        console.log('💾 Paso 1/5: Guardando inscripción en SharePoint...');
+        console.log('💾 Paso 1/3: Guardando inscripción en SharePoint...');
         const inscripcionId = await guardarEnSharePoint(formData, cursoSeleccionado);
         console.log(`✅ Inscripción guardada con ID: ${inscripcionId}`);
         
-        submitBtn.textContent = 'Subiendo documentos...';
-        
-        // PASO 2: Subir cédula
-        console.log('📤 Paso 2/5: Subiendo cédula...');
-        if (formData.cedulaFile) {
-            await subirArchivo(formData.cedulaFile, inscripcionId, 'Cedula');
-            console.log('✅ Cédula subida correctamente');
-        }
-        
-        // PASO 3: Subir certificado anterior (opcional)
-        console.log('📤 Paso 3/5: Subiendo certificado anterior...');
-        if (formData.cursoAnteriorFile) {
-            await subirArchivo(formData.cursoAnteriorFile, inscripcionId, 'CertificadoAnterior');
-            console.log('✅ Certificado anterior subido correctamente');
-        } else {
-            console.log('ℹ️ No hay certificado anterior para subir');
-        }
-        
         submitBtn.textContent = 'Procesando archivos...';
 
-        // PASO 4: Convertir archivos a Base64
-        console.log('📎 Paso 4/5: Convirtiendo archivos a Base64...');
+        // PASO 2: Convertir archivos a Base64
+        console.log('📎 Paso 2/3: Convirtiendo archivos a Base64...');
+        let fotoBase64 = '';
         let cedulaBase64 = '';
         let certificadoBase64 = '';
+
+        if (formData.fotoFile) {
+            fotoBase64 = await convertirArchivoABase64(formData.fotoFile);
+            console.log('✅ Foto convertida a Base64');
+        }
 
         if (formData.cedulaFile) {
             cedulaBase64 = await convertirArchivoABase64(formData.cedulaFile);
@@ -915,12 +1007,14 @@ async function enviarInscripcion(event) {
 
         submitBtn.textContent = 'Enviando correo de confirmación...';
 
-        // PASO 5: Enviar correo con PDF y archivos adjuntos
-        console.log('📧 Paso 5/5: Enviando correo y guardando datos...');
+        // PASO 3: Enviar correo con PDF y archivos adjuntos
+        console.log('📧 Paso 3/3: Enviando correo...');
 
         // Crear datos completos con archivos
         const datosCompletos = {
             ...formData,
+            fotoBase64: fotoBase64,
+            fotoNombre: formData.fotoFile ? formData.fotoFile.name : '',
             cedulaBase64: cedulaBase64,
             cedulaNombre: formData.cedulaFile ? formData.cedulaFile.name : '',
             certificadoBase64: certificadoBase64,
@@ -953,6 +1047,8 @@ async function enviarInscripcion(event) {
 // ============================================
 
 // Hacer funciones disponibles globalmente para el HTML
+window.seleccionarCategoria = seleccionarCategoria;
+window.volverACategorias = volverACategorias;
 window.abrirFormulario = abrirFormulario;
 window.cerrarFormulario = cerrarFormulario;
 window.enviarInscripcion = enviarInscripcion;
