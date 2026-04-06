@@ -182,9 +182,88 @@
             color: #1e293b;
         }
 
+        /* Categories Section */
+        .categories-section {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: #1e293b;
+            opacity: 0.7;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            border-color: #1e40af;
+        }
+
+        .category-card.selected {
+            border-color: #1e40af;
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(8, 145, 178, 0.05) 100%);
+        }
+
+        .category-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .category-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .category-description {
+            font-size: 15px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
         /* Formulario */
         .form-section {
-            max-width: 800px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             display: none;
@@ -332,24 +411,11 @@
             max-width: 1200px;
             margin: 60px auto;
             padding: 0 20px;
+            display: none;
         }
 
-        .section-header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .section-header h2 {
-            font-size: 36px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 16px;
-        }
-
-        .section-header p {
-            font-size: 18px;
-            color: #1e293b;
-            opacity: 0.7;
+        .courses-section.active {
+            display: block;
         }
 
         .courses-grid {
@@ -444,6 +510,25 @@
 
         .enroll-btn:hover {
             background: #b91c1c;
+        }
+
+        .back-btn {
+            background: #64748b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: #475569;
         }
 
         /* Loading */
@@ -590,6 +675,10 @@
             .courses-grid {
                 grid-template-columns: 1fr;
             }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -649,6 +738,59 @@
         </div>
     </section>
 
+    <!-- Categories Section -->
+    <section id="categoriesSection" class="categories-section">
+        <div class="section-header">
+            <h2>Selecciona tu Categoría de Curso</h2>
+            <p>Elige el tipo de formación que necesitas</p>
+        </div>
+        
+        <div class="categories-grid">
+            <div class="category-card" onclick="seleccionarCategoria('fundamentación')">
+                <div class="category-icon">🎓</div>
+                <div class="category-title">Fundamentación</div>
+                <div class="category-description">
+                    Cursos básicos y fundamentales para iniciar tu carrera en seguridad y vigilancia privada
+                </div>
+            </div>
+
+            <div class="category-card" onclick="seleccionarCategoria('reentrenamiento')">
+                <div class="category-icon">🔄</div>
+                <div class="category-title">Reentrenamiento</div>
+                <div class="category-description">
+                    Actualización y renovación de conocimientos para personal activo en el sector
+                </div>
+            </div>
+
+            <div class="category-card" onclick="seleccionarCategoria('especializacion')">
+                <div class="category-icon">⭐</div>
+                <div class="category-title">Especialización</div>
+                <div class="category-description">
+                    Cursos avanzados y especializados para profesionales que buscan destacar
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="coursesSection" class="courses-section">
+        <button class="back-btn" onclick="volverACategorias()">
+            ← Volver a Categorías
+        </button>
+        
+        <div class="section-header">
+            <h2 id="coursesTitle">Cursos Disponibles</h2>
+            <p id="coursesSubtitle">Selecciona el curso de tu interés</p>
+        </div>
+        
+        <div id="coursesContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando cursos...</p>
+            </div>
+        </div>
+    </section>
+
     <!-- Formulario de Inscripción -->
     <section id="formSection" class="form-section">
         <div class="form-container">
@@ -658,27 +800,76 @@
             </div>
 
             <form id="inscripcionForm" onsubmit="enviarInscripcion(event)">
+                <!-- Tipo de Estudiante -->
                 <div class="form-group">
-                    <label>Nombre Completo *</label>
-                    <input type="text" name="nombre" required>
+                    <label>Tipo de Estudiante *</label>
+                    <select name="tipoEstudiante" required>
+                        <option value="">Seleccione una opción</option>
+                        <option value="Nuevo">Nuevo</option>
+                        <option value="Antiguo">Antiguo</option>
+                    </select>
                 </div>
 
+                <!-- Nombres y Apellidos -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombres *</label>
+                        <input type="text" name="nombres" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellidos *</label>
+                        <input type="text" name="apellidos" required>
+                    </div>
+                </div>
+
+                <!-- Documento y Lugar de Expedición -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Documento de Identidad *</label>
                         <input type="text" name="documento" required>
                     </div>
                     <div class="form-group">
-                        <label>Teléfono *</label>
-                        <input type="tel" name="telefono" required>
+                        <label>Lugar de Expedición *</label>
+                        <input type="text" name="lugarExpedicion" placeholder="Ej: Cali, Valle del Cauca" required>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Correo Electrónico *</label>
-                    <input type="email" name="correo" required>
+                <!-- Fechas de Cédula -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha de Nacimiento *</label>
+                        <input type="date" name="fechaNacimiento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Expedición de Cédula *</label>
+                        <input type="date" name="fechaExpedicion" required>
+                    </div>
                 </div>
 
+                <!-- Teléfono y Correo -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono *</label>
+                        <input type="tel" name="telefono" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" name="correo" required>
+                    </div>
+                </div>
+
+                <!-- Foto 3x4 (Opcional) -->
+                <div class="form-group">
+                    <label>Foto 3x4 - Fondo Azul o Blanco (Opcional)</label>
+                    <div class="file-upload" onclick="document.getElementById('fotoFile').click()">
+                        <input type="file" id="fotoFile" name="foto" accept=".jpg,.jpeg,.png">
+                        <div class="file-upload-icon">📸</div>
+                        <div id="fotoFileName">Click para adjuntar foto</div>
+                        <div style="font-size: 12px; opacity: 0.6; margin-top: 4px;">JPG o PNG - Fondo azul o blanco (Máx. 5MB)</div>
+                    </div>
+                </div>
+
+                <!-- Fotocopia de Cédula -->
                 <div class="form-group">
                     <label>Fotocopia de Cédula *</label>
                     <div class="file-upload" onclick="document.getElementById('cedulaFile').click()">
@@ -689,6 +880,7 @@
                     </div>
                 </div>
 
+                <!-- Curso Anterior (Opcional) -->
                 <div class="form-group">
                     <label>Último Curso Realizado (Opcional)</label>
                     <div class="file-upload" onclick="document.getElementById('cursoAnteriorFile').click()">
@@ -699,6 +891,7 @@
                     </div>
                 </div>
 
+                <!-- Resumen -->
                 <div class="summary-box" id="summaryBox">
                     <!-- Se llena dinámicamente -->
                 </div>
@@ -707,21 +900,6 @@
                     Completar Inscripción
                 </button>
             </form>
-        </div>
-    </section>
-
-    <!-- Cursos -->
-    <section class="courses-section">
-        <div class="section-header">
-            <h2>Nuestros Cursos</h2>
-            <p>Capacitación certificada y avalada por la Superintendencia de Vigilancia</p>
-        </div>
-        
-        <div id="coursesContainer">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>Cargando cursos...</p>
-            </div>
         </div>
     </section>
 
